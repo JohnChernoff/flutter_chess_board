@@ -24,7 +24,7 @@ class ChessBoard extends StatefulWidget {
 
   final PlayerColor boardOrientation;
 
-  final VoidCallback? onMove;
+  final void Function(String from,String to,String? prom)? onMove;
 
   final String pieceSet;
 
@@ -33,6 +33,10 @@ class ChessBoard extends StatefulWidget {
   final ui.Image? backgroundImage;
 
   final ui.Color dragHighlightColor;
+
+  final bool dummyBoard;
+
+  final ui.Color whitePieceColor,blackPieceColor;
 
   const ChessBoard({
     Key? key,
@@ -46,12 +50,17 @@ class ChessBoard extends StatefulWidget {
     this.arrows = const [],
     this.backgroundImage,
     this.pieceSet = "leipzig",
+    this.dummyBoard = false,
+    this.blackPieceColor = Colors.black,
+    this.whitePieceColor = Colors.white,
   }) : super(key: key);
 
-  static Image getAssetImage(String path) {
+  Image getPieceImage(String path,Color pieceColor) {
     return Image.asset("images/$path",
       package: 'flutter_chess_board',
       fit: BoxFit.cover,
+      colorBlendMode: BlendMode.modulate,
+      color:  pieceColor == Chess.BLACK ? blackPieceColor : whitePieceColor,
       //scale: .9,
     );
     //return AssetImage("${(kDebugMode && kIsWeb)?"":"assets/"}$path");
@@ -101,7 +110,7 @@ class _ChessBoardState extends State<ChessBoard> {
                     var squareName = '$boardFile$boardRank';
                     var pieceOnSquare = game.get(squareName);
 
-                    var boardPiece = BoardPiece(
+                    var boardPiece = BoardPiece(widget,
                       squareName: squareName,
                       game: game,
                       set: widget.pieceSet,
@@ -109,7 +118,7 @@ class _ChessBoardState extends State<ChessBoard> {
                       size: originalDragSquare == squareName ? widget.size : null,
                     );
 
-                    BoardPiece feedbackPiece = BoardPiece(
+                    BoardPiece feedbackPiece = BoardPiece(widget,
                       squareName: squareName,
                       game: game,
                       set: widget.pieceSet,
@@ -139,7 +148,7 @@ class _ChessBoardState extends State<ChessBoard> {
                     }, onAccept: (PieceMoveData pieceMoveData) async {
                       // A way to check if move occurred.
                       Color moveColor = game.turn;
-
+                      String? promStr;
                       if (pieceMoveData.pieceType == "P" &&
                           ((pieceMoveData.squareName[1] == "7" &&
                                   squareName[1] == "8" &&
@@ -147,25 +156,25 @@ class _ChessBoardState extends State<ChessBoard> {
                               (pieceMoveData.squareName[1] == "2" &&
                                   squareName[1] == "1" &&
                                   pieceMoveData.pieceColor == Color.BLACK))) {
-                        var val = await _promotionDialog(context);
+                        promStr = await _promotionDialog(context);
 
-                        if (val != null) {
+                        if (promStr != null && !widget.dummyBoard) {
                           widget.controller.makeMoveWithPromotion(
                             from: pieceMoveData.squareName,
                             to: squareName,
-                            pieceToPromoteTo: val,
+                            pieceToPromoteTo: promStr,
                           );
                         } else {
                           return;
                         }
-                      } else {
+                      } else if (!widget.dummyBoard) {
                         widget.controller.makeMove(
                           from: pieceMoveData.squareName,
                           to: squareName,
                         );
                       }
-                      if (game.turn != moveColor) {
-                        widget.onMove?.call();
+                      if (game.turn != moveColor || widget.dummyBoard) {
+                        widget.onMove?.call(pieceMoveData.squareName,squareName,promStr);
                       }
                     });
 
@@ -270,13 +279,14 @@ class _ChessBoardState extends State<ChessBoard> {
 }
 
 class BoardPiece extends StatelessWidget {
+  final ChessBoard chessBoard;
   final String squareName;
   final Chess game;
   final String set;
   final ui.Color? highlightColor;
   final double? size;
 
-  BoardPiece({
+  BoardPiece(this.chessBoard,{
     Key? key,
     required this.squareName,
     required this.game,
@@ -294,63 +304,18 @@ class BoardPiece extends StatelessWidget {
       return Container();
     }
 
-    String piece = (square?.color == Color.WHITE ? 'W' : 'B') +
+    String piece = (square?.color == Color.WHITE ? 'w' : 'b') +
         (square?.type.toUpperCase() ?? 'P');
-
-    switch (piece) {
-      case "WP":
-        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/wP.png");
-        break;
-      case "WR":
-        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/wR.png");
-        break;
-      case "WN":
-        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/wN.png");
-        break;
-      case "WB":
-        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/wB.png");
-        break;
-      case "WQ":
-        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/wQ.png");
-        break;
-      case "WK":
-        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/wK.png");
-        break;
-      case "BP":
-        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/bP.png");
-        break;
-      case "BR":
-        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/bR.png");
-        break;
-      case "BN":
-        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/bN.png");
-        break;
-      case "BB":
-        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/bB.png");
-        break;
-      case "BQ":
-        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/bQ.png");
-        break;
-      case "BK":
-        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/bK.png");
-        break;
-      default:
-        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/wP.png");
-    }
-
+    imageToDisplay = chessBoard.getPieceImage("piece_sets/$set/$piece.png",square?.color ?? Chess.BLACK);
     double? pieceSize = size == null ? null : size!/8;
-    //if (pieceSize != null) print("Dragging");
-    //double? pieceSize = size == null ? null : size/8;
+    //if (pieceSize != null) print("Dragging"); //double? pieceSize = size == null ? null : size/8;
 
     return Container( //color: Random().nextBool() ? Colors.green : Colors.red,
       width: pieceSize,
       height: pieceSize,
       child: Center(
-        child: Image(
-          image: imageToDisplay.image,
-          color: highlightColor,
+        child: imageToDisplay,
         ),
-      ),
     );
   }
 }
