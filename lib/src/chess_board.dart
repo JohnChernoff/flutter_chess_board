@@ -157,22 +157,24 @@ class _ChessBoardState extends State<ChessBoard> {
                                   squareName[1] == "1" &&
                                   pieceMoveData.pieceColor == Color.BLACK))) {
                         promStr = await _promotionDialog(context);
+                      }
 
-                        if (promStr != null && !widget.dummyBoard) {
+                      if (!widget.dummyBoard) {
+                        if (promStr != null) {
                           widget.controller.makeMoveWithPromotion(
                             from: pieceMoveData.squareName,
                             to: squareName,
                             pieceToPromoteTo: promStr,
                           );
-                        } else {
-                          return;
                         }
-                      } else if (!widget.dummyBoard) {
-                        widget.controller.makeMove(
-                          from: pieceMoveData.squareName,
-                          to: squareName,
-                        );
+                        else {
+                          widget.controller.makeMove(
+                            from: pieceMoveData.squareName,
+                            to: squareName,
+                          );
+                        }
                       }
+
                       if (game.turn != moveColor || widget.dummyBoard) {
                         widget.onMove?.call(pieceMoveData.squareName,squareName,promStr);
                       }
