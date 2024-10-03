@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'dart:ui' as ui;
-
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:chess/chess.dart' hide State;
@@ -36,7 +35,7 @@ class ChessBoard extends StatefulWidget {
 
   final bool dummyBoard;
 
-  final ui.Color whitePieceColor,blackPieceColor;
+  final ui.Color whitePieceColor,blackPieceColor,gridColor;
 
   const ChessBoard({
     Key? key,
@@ -53,6 +52,7 @@ class ChessBoard extends StatefulWidget {
     this.dummyBoard = false,
     this.blackPieceColor = Colors.black,
     this.whitePieceColor = Colors.white,
+    this.gridColor = Colors.grey
   }) : super(key: key);
 
   Image getPieceImage(String path,Color pieceColor) {
@@ -89,7 +89,7 @@ class _ChessBoardState extends State<ChessBoard> {
           child: Stack(
             children: [
               AspectRatio(
-                child: widget.backgroundImage != null ? CustomPaint(painter: BoardPainter(widget.backgroundImage!)) : _getBoardImage(widget.boardColor),
+                child: widget.backgroundImage != null ? CustomPaint(painter: BoardPainter(widget.backgroundImage,widget.gridColor)) : _getBoardImage(widget.boardColor),
                 aspectRatio: 1.0,
               ),
               AspectRatio(
@@ -429,17 +429,32 @@ class _ArrowPainter extends CustomPainter {
 }
 
 class BoardPainter extends CustomPainter {
-  final ui.Image image;
+  final ui.Image? image;
+  final ui.Color gridColor;
 
-  const BoardPainter(this.image);
+  const BoardPainter(this.image,this.gridColor);
 
   @override
   void paint(Canvas canvas, Size size) { //print("Size: $size");
-    canvas.scale(
-        size.width / image.width,
-        size.height / image.height
-    );
-    canvas.drawImage(image, const Offset(0, 0), Paint());
+    ui.Image? boardImage = image;
+    if (boardImage != null) {
+      canvas.scale(
+          size.width / boardImage.width,
+          size.height / boardImage.height
+      );
+      canvas.drawImage(boardImage, const Offset(0, 0), Paint());
+      double squareWidth = boardImage.width/8;
+      double squareHeight = boardImage.height/8;
+      final paint = ui.Paint()
+        ..color = gridColor
+        ..strokeWidth = 1;
+      for (double x=0; x<=boardImage.width; x+= squareWidth) {
+        canvas.drawLine(ui.Offset(x, 0), ui.Offset(x, boardImage.height as double), paint);
+      }
+      for (double y=0; y<=boardImage.height; y+= squareHeight) {
+        canvas.drawLine(ui.Offset(0, y), ui.Offset(boardImage.width as double,y), paint);
+      }
+    }
   }
 
   @override
