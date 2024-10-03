@@ -14,7 +14,7 @@ class ChessBoard extends StatefulWidget {
   final ChessBoardController controller;
 
   /// Size of chessboard
-  final double? size;
+  final double size;
 
   /// A boolean which checks if the user should be allowed to make moves
   final bool enableUserMoves;
@@ -26,27 +26,49 @@ class ChessBoard extends StatefulWidget {
 
   final VoidCallback? onMove;
 
+  final String pieceSet;
+
   final List<BoardArrow> arrows;
 
   final ui.Image? backgroundImage;
 
+  final ui.Color dragHighlightColor;
+
   const ChessBoard({
     Key? key,
     required this.controller,
-    this.size,
+    required this.size,
     this.enableUserMoves = true,
     this.boardColor = BoardColor.brown,
+    this.dragHighlightColor = Colors.orange,
     this.boardOrientation = PlayerColor.white,
     this.onMove,
     this.arrows = const [],
     this.backgroundImage,
+    this.pieceSet = "leipzig",
   }) : super(key: key);
+
+  static Image getAssetImage(String path) {
+    return Image.asset("images/$path",
+      package: 'flutter_chess_board',
+      fit: BoxFit.cover,
+      //scale: .9,
+    );
+    //return AssetImage("${(kDebugMode && kIsWeb)?"":"assets/"}$path");
+  }
 
   @override
   State<ChessBoard> createState() => _ChessBoardState();
 }
 
 class _ChessBoardState extends State<ChessBoard> {
+  String dragSquare = "";
+  String originalDragSquare = "";
+
+  Offset dragAnchorStrategy(Draggable<Object> d, BuildContext context, Offset point) {
+    return Offset(widget.size/16,widget.size/16);
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<Chess>(
@@ -79,15 +101,26 @@ class _ChessBoardState extends State<ChessBoard> {
                     var squareName = '$boardFile$boardRank';
                     var pieceOnSquare = game.get(squareName);
 
-                    var piece = BoardPiece(
+                    var boardPiece = BoardPiece(
                       squareName: squareName,
                       game: game,
+                      set: widget.pieceSet,
+                      highlightColor: dragSquare == squareName ? widget.dragHighlightColor : null,
+                      size: originalDragSquare == squareName ? widget.size : null,
+                    );
+
+                    BoardPiece feedbackPiece = BoardPiece(
+                      squareName: squareName,
+                      game: game,
+                      set: widget.pieceSet,
+                      size: widget.size,
                     );
 
                     var draggable = game.get(squareName) != null
                         ? Draggable<PieceMoveData>(
-                            child: piece,
-                            feedback: piece,
+                            child: boardPiece,
+                            feedback: feedbackPiece,
+                            dragAnchorStrategy: dragAnchorStrategy,
                             childWhenDragging: SizedBox(),
                             data: PieceMoveData(
                               squareName: squareName,
@@ -96,7 +129,7 @@ class _ChessBoardState extends State<ChessBoard> {
                               pieceColor: pieceOnSquare?.color ?? Color.WHITE,
                             ),
                           )
-                        : Container();
+                        :  dragSquare == squareName ? Container(color: widget.dragHighlightColor) : Container();
 
                     var dragTarget =
                         DragTarget<PieceMoveData>(builder: (context, list, _) {
@@ -239,16 +272,22 @@ class _ChessBoardState extends State<ChessBoard> {
 class BoardPiece extends StatelessWidget {
   final String squareName;
   final Chess game;
+  final String set;
+  final ui.Color? highlightColor;
+  final double? size;
 
-  const BoardPiece({
+  BoardPiece({
     Key? key,
     required this.squareName,
     required this.game,
+    required this.set,
+    this.highlightColor,
+    this.size
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    late Widget imageToDisplay;
+    late Image imageToDisplay;
     var square = game.get(squareName);
 
     if (game.get(squareName) == null) {
@@ -260,46 +299,59 @@ class BoardPiece extends StatelessWidget {
 
     switch (piece) {
       case "WP":
-        imageToDisplay = WhitePawn();
+        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/wP.png");
         break;
       case "WR":
-        imageToDisplay = WhiteRook();
+        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/wR.png");
         break;
       case "WN":
-        imageToDisplay = WhiteKnight();
+        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/wN.png");
         break;
       case "WB":
-        imageToDisplay = WhiteBishop();
+        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/wB.png");
         break;
       case "WQ":
-        imageToDisplay = WhiteQueen();
+        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/wQ.png");
         break;
       case "WK":
-        imageToDisplay = WhiteKing();
+        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/wK.png");
         break;
       case "BP":
-        imageToDisplay = BlackPawn();
+        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/bP.png");
         break;
       case "BR":
-        imageToDisplay = BlackRook();
+        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/bR.png");
         break;
       case "BN":
-        imageToDisplay = BlackKnight();
+        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/bN.png");
         break;
       case "BB":
-        imageToDisplay = BlackBishop();
+        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/bB.png");
         break;
       case "BQ":
-        imageToDisplay = BlackQueen();
+        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/bQ.png");
         break;
       case "BK":
-        imageToDisplay = BlackKing();
+        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/bK.png");
         break;
       default:
-        imageToDisplay = WhitePawn();
+        imageToDisplay = ChessBoard.getAssetImage("piece_sets/$set/wP.png");
     }
 
-    return imageToDisplay;
+    double? pieceSize = size == null ? null : size!/8;
+    //if (pieceSize != null) print("Dragging");
+    //double? pieceSize = size == null ? null : size/8;
+
+    return Container( //color: Random().nextBool() ? Colors.green : Colors.red,
+      width: pieceSize,
+      height: pieceSize,
+      child: Center(
+        child: Image(
+          image: imageToDisplay.image,
+          color: highlightColor,
+        ),
+      ),
+    );
   }
 }
 

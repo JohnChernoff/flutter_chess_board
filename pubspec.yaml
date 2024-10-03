@@ -41,6 +41,43 @@ flutter:
     - images/dark_brown_board.png
     - images/2.0x/dark_brown_board.png
     - images/3.0x/dark_brown_board.png
+    # - images/boards/
+    - images/piece_sets/
+    - images/piece_sets/alpha/
+    - images/piece_sets/anarcandy/
+    - images/piece_sets/caliente/
+    - images/piece_sets/california/
+    - images/piece_sets/cardinal/
+    - images/piece_sets/cburnett/
+    - images/piece_sets/celtic/
+    - images/piece_sets/chess7/
+    - images/piece_sets/chessnut/
+    - images/piece_sets/companion/
+    - images/piece_sets/disguised/
+    - images/piece_sets/dubrovny/
+    - images/piece_sets/fantasy/
+    - images/piece_sets/fresca/
+    - images/piece_sets/gioco/
+    - images/piece_sets/governor/
+    - images/piece_sets/horsey/
+    - images/piece_sets/icpieces/
+    - images/piece_sets/kiwen-suwi/
+    - images/piece_sets/kosal/
+    - images/piece_sets/leipzig/
+    - images/piece_sets/letter/
+    - images/piece_sets/libra/
+    - images/piece_sets/maestro/
+    - images/piece_sets/merida/
+    - images/piece_sets/mole/
+    - images/piece_sets/mono/
+    - images/piece_sets/mpchess/
+    - images/piece_sets/pirouetti/
+    - images/piece_sets/pixel/
+    - images/piece_sets/reillycraig/
+    - images/piece_sets/riohacha/
+    - images/piece_sets/shapes/
+    - images/piece_sets/staunty/
+    - images/piece_sets/tatiana/
   #
   # For details regarding assets in packages, see
   # https://flutter.io/assets-and-images/#from-packages
