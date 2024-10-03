@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +28,8 @@ class ChessBoard extends StatefulWidget {
 
   final List<BoardArrow> arrows;
 
+  final ui.Image? backgroundImage;
+
   const ChessBoard({
     Key? key,
     required this.controller,
@@ -36,6 +39,7 @@ class ChessBoard extends StatefulWidget {
     this.boardOrientation = PlayerColor.white,
     this.onMove,
     this.arrows = const [],
+    this.backgroundImage,
   }) : super(key: key);
 
   @override
@@ -54,7 +58,7 @@ class _ChessBoardState extends State<ChessBoard> {
           child: Stack(
             children: [
               AspectRatio(
-                child: _getBoardImage(widget.boardColor),
+                child: widget.backgroundImage != null ? CustomPaint(painter: BoardPainter(widget.backgroundImage!)) : _getBoardImage(widget.boardColor),
                 aspectRatio: 1.0,
               ),
               AspectRatio(
@@ -404,5 +408,25 @@ class _ArrowPainter extends CustomPainter {
   @override
   bool shouldRepaint(_ArrowPainter oldDelegate) {
     return arrows != oldDelegate.arrows;
+  }
+}
+
+class BoardPainter extends CustomPainter {
+  final ui.Image image;
+
+  const BoardPainter(this.image);
+
+  @override
+  void paint(Canvas canvas, Size size) { //print("Size: $size");
+    canvas.scale(
+        size.width / image.width,
+        size.height / image.height
+    );
+    canvas.drawImage(image, const Offset(0, 0), Paint());
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
   }
 }

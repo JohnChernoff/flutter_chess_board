@@ -4,7 +4,7 @@ version: 1.0.1
 repository: https://www.github.com/deven98/flutter_chess_board
 
 dependencies:
-  chess: ^0.7.0
+  chess: ^0.8.1
   chess_vectors_flutter: ^1.0.12
 
   flutter:
