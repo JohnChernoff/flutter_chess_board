@@ -1,11 +1,11 @@
 import 'dart:math';
-import 'dart:ui' as ui;
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:chess/chess.dart' hide State;
 import 'board_arrow.dart';
 import 'chess_board_controller.dart';
 import 'constants.dart';
+import 'dart:ui' as ui;
 
 class ChessBoard extends StatefulWidget {
   /// An instance of [ChessBoardController] which holds the game and allows
@@ -35,6 +35,8 @@ class ChessBoard extends StatefulWidget {
 
   final bool dummyBoard;
 
+  final bool hidePieces;
+
   final ui.Color whitePieceColor,blackPieceColor,gridColor;
 
   const ChessBoard({
@@ -52,18 +54,18 @@ class ChessBoard extends StatefulWidget {
     this.dummyBoard = false,
     this.blackPieceColor = Colors.black,
     this.whitePieceColor = Colors.white,
-    this.gridColor = Colors.grey
+    this.gridColor = Colors.grey,
+    this.hidePieces = false,
   }) : super(key: key);
 
-  Image getPieceImage(String path,Color pieceColor) {
-    return Image.asset("images/$path",
+  static Image getPieceImage(String style, PieceType? type, Color color, {blendColor = Colors.white}) {
+    String path = "$style/${color.name[0].toUpperCase()}${type?.name.toLowerCase() ?? "x"}.png";
+    return Image.asset("images/piece_sets/$path", //scale: .9,
       package: 'flutter_chess_board',
       fit: BoxFit.cover,
       colorBlendMode: BlendMode.modulate,
-      color:  pieceColor == Chess.BLACK ? blackPieceColor : whitePieceColor,
-      //scale: .9,
-    );
-    //return AssetImage("${(kDebugMode && kIsWeb)?"":"assets/"}$path");
+      color: blendColor, //pieceColor == Chess.BLACK ? blackPieceColor : whitePieceColor,
+    ); //return AssetImage("${(kDebugMode && kIsWeb)?"":"assets/"}$path");
   }
 
   @override
@@ -92,7 +94,7 @@ class _ChessBoardState extends State<ChessBoard> {
                 child: widget.backgroundImage != null ? CustomPaint(painter: BoardPainter(widget.backgroundImage,widget.gridColor)) : _getBoardImage(widget.boardColor),
                 aspectRatio: 1.0,
               ),
-              AspectRatio(
+              widget.hidePieces ? const SizedBox.shrink(): AspectRatio(
                 aspectRatio: 1.0,
                 child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -300,15 +302,11 @@ class BoardPiece extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     late Image imageToDisplay;
-    var square = game.get(squareName);
-
-    if (game.get(squareName) == null) {
+    Piece? square = game.get(squareName);
+    if (square == null) {
       return Container();
     }
-
-    String piece = (square?.color == Color.WHITE ? 'w' : 'b') +
-        (square?.type.toUpperCase() ?? 'P');
-    imageToDisplay = chessBoard.getPieceImage("piece_sets/$set/$piece.png",square?.color ?? Chess.BLACK);
+    imageToDisplay = ChessBoard.getPieceImage(set,square.type,square.color,blendColor: (square.color) == Color.WHITE ? chessBoard.whitePieceColor : chessBoard.blackPieceColor);
     double? pieceSize = size == null ? null : size!/8;
     //if (pieceSize != null) print("Dragging"); //double? pieceSize = size == null ? null : size/8;
 
