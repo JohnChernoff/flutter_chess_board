@@ -59,8 +59,7 @@ class ChessBoard extends StatefulWidget {
   }) : super(key: key);
 
   static Image getPieceImage(String style, PieceType? type, Color color, {blendColor = Colors.white}) {
-    String pieceLetter = type?.name == PieceType.KNIGHT ? "n" : type?.name.toLowerCase() ?? "x";
-    String path = "$style/${color.name[0].toUpperCase()}$pieceLetter.png";
+    String path = "$style/${color.name[0].toLowerCase()}${type?.name.toUpperCase() ?? "x"}.png";
     return Image.asset("images/piece_sets/$path", //scale: .9,
       package: 'flutter_chess_board',
       fit: BoxFit.cover,
