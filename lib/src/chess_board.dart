@@ -212,25 +212,25 @@ class _ChessBoardState extends State<ChessBoard> {
     switch (color) {
       case BoardColor.brown:
         return Image.asset(
-          "images/brown_board.png",
+          "images/boards/brown_board.png",
           package: 'flutter_chess_board',
           fit: BoxFit.cover,
         );
       case BoardColor.darkBrown:
         return Image.asset(
-          "images/dark_brown_board.png",
+          "images/boards/dark_brown_board.png",
           package: 'flutter_chess_board',
           fit: BoxFit.cover,
         );
       case BoardColor.green:
         return Image.asset(
-          "images/green_board.png",
+          "images/boards/green_board.png",
           package: 'flutter_chess_board',
           fit: BoxFit.cover,
         );
       case BoardColor.orange:
         return Image.asset(
-          "images/orange_board.png",
+          "images/boards/orange_board.png",
           package: 'flutter_chess_board',
           fit: BoxFit.cover,
         );
