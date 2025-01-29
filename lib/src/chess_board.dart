@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:chess/chess.dart' hide State;
 import 'board_arrow.dart';
@@ -39,6 +40,8 @@ class ChessBoard extends StatefulWidget {
 
   final ui.Color whitePieceColor,blackPieceColor,gridColor;
 
+  final Function(SquareCoord coord, bool selected)? onSquareSelect;
+
   const ChessBoard({
     Key? key,
     required this.controller,
@@ -56,6 +59,7 @@ class ChessBoard extends StatefulWidget {
     this.whitePieceColor = Colors.white,
     this.gridColor = Colors.grey,
     this.hidePieces = false,
+    this.onSquareSelect,
   }) : super(key: key);
 
   static Image getPieceImage(String style, PieceType? type, Color color, {blendColor = Colors.white}) {
@@ -70,6 +74,18 @@ class ChessBoard extends StatefulWidget {
 
   @override
   State<ChessBoard> createState() => _ChessBoardState();
+}
+
+class SquareCoord {
+  final int row,column;
+  final String name;
+  SquareCoord(PlayerColor orientation, this.row,this.column) :
+        this.name =
+        "${(orientation == PlayerColor.white
+            ? '${files[column]}' : '${files[7 - column]}')}${
+            (orientation == PlayerColor.black
+            ? '${row + 1}' : '${(7 - row) + 1}')}";
+
 }
 
 class _ChessBoardState extends State<ChessBoard> {
@@ -100,47 +116,37 @@ class _ChessBoardState extends State<ChessBoard> {
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 8),
                   itemBuilder: (context, index) {
-                    var row = index ~/ 8;
-                    var column = index % 8;
-                    var boardRank = widget.boardOrientation == PlayerColor.black
-                        ? '${row + 1}'
-                        : '${(7 - row) + 1}';
-                    var boardFile = widget.boardOrientation == PlayerColor.white
-                        ? '${files[column]}'
-                        : '${files[7 - column]}';
-
-                    var squareName = '$boardFile$boardRank';
-                    var pieceOnSquare = game.get(squareName);
-
+                    SquareCoord sqrCoord = SquareCoord(widget.boardOrientation,  index ~/ 8, index % 8);
+                    var pieceOnSquare = game.get(sqrCoord.name);
                     var boardPiece = BoardPiece(widget,
-                      squareName: squareName,
+                      squareName: sqrCoord.name,
                       game: game,
                       set: widget.pieceSet,
-                      highlightColor: dragSquare == squareName ? widget.dragHighlightColor : null,
-                      size: originalDragSquare == squareName ? widget.size : null,
+                      highlightColor: dragSquare == sqrCoord.name ? widget.dragHighlightColor : null,
+                      size: originalDragSquare == sqrCoord.name ? widget.size : null,
                     );
 
                     BoardPiece feedbackPiece = BoardPiece(widget,
-                      squareName: squareName,
+                      squareName: sqrCoord.name,
                       game: game,
                       set: widget.pieceSet,
                       size: widget.size,
                     );
 
-                    var draggable = game.get(squareName) != null
+                    var draggable = game.get(sqrCoord.name) != null
                         ? Draggable<PieceMoveData>(
                             child: boardPiece,
                             feedback: feedbackPiece,
                             dragAnchorStrategy: dragAnchorStrategy,
                             childWhenDragging: SizedBox(),
                             data: PieceMoveData(
-                              squareName: squareName,
+                              squareName: sqrCoord.name,
                               pieceType:
                                   pieceOnSquare?.type.toUpperCase() ?? 'P',
                               pieceColor: pieceOnSquare?.color ?? Color.WHITE,
                             ),
                           )
-                        :  dragSquare == squareName ? Container(color: widget.dragHighlightColor) : Container();
+                        :  dragSquare == sqrCoord.name ? Container(color: widget.dragHighlightColor) : Container();
 
                     var dragTarget =
                         DragTarget<PieceMoveData>(builder: (context, list, _) {
@@ -153,10 +159,10 @@ class _ChessBoardState extends State<ChessBoard> {
                       String? promStr;
                       if (pieceMoveData.pieceType == "P" &&
                           ((pieceMoveData.squareName[1] == "7" &&
-                                  squareName[1] == "8" &&
+                                sqrCoord.name[1] == "8" &&
                                   pieceMoveData.pieceColor == Color.WHITE) ||
                               (pieceMoveData.squareName[1] == "2" &&
-                                  squareName[1] == "1" &&
+                                  sqrCoord.name[1] == "1" &&
                                   pieceMoveData.pieceColor == Color.BLACK))) {
                         promStr = await _promotionDialog(context);
                       }
@@ -165,24 +171,32 @@ class _ChessBoardState extends State<ChessBoard> {
                         if (promStr != null) {
                           widget.controller.makeMoveWithPromotion(
                             from: pieceMoveData.squareName,
-                            to: squareName,
+                            to: sqrCoord.name,
                             pieceToPromoteTo: promStr,
                           );
                         }
                         else {
                           widget.controller.makeMove(
                             from: pieceMoveData.squareName,
-                            to: squareName,
+                            to: sqrCoord.name,
                           );
                         }
                       }
 
                       if (game.turn != moveColor || widget.dummyBoard) {
-                        widget.onMove?.call(pieceMoveData.squareName,squareName,promStr);
+                        widget.onMove?.call(pieceMoveData.squareName,sqrCoord.name,promStr);
                       }
                     });
-
-                    return dragTarget;
+                    return kIsWeb
+                        ? MouseRegion(
+                          hitTestBehavior: HitTestBehavior.translucent,
+                          onEnter: (b) => widget.onSquareSelect != null ? widget.onSquareSelect!(sqrCoord, true) : null,
+                          onExit: (b) => widget.onSquareSelect != null ? widget.onSquareSelect!(sqrCoord, false) : null,
+                          child: dragTarget)
+                        : GestureDetector(
+                          onTap: () => widget.onSquareSelect != null ? widget.onSquareSelect!(sqrCoord, true) : null,
+                          onDoubleTap: () => widget.onSquareSelect != null ? widget.onSquareSelect!(sqrCoord, false) : null,
+                          child: dragTarget);
                   },
                   itemCount: 64,
                   shrinkWrap: true,
@@ -296,7 +310,7 @@ class BoardPiece extends StatelessWidget {
     required this.game,
     required this.set,
     this.highlightColor,
-    this.size
+    this.size,
   }) : super(key: key);
 
   @override
@@ -309,13 +323,12 @@ class BoardPiece extends StatelessWidget {
     imageToDisplay = ChessBoard.getPieceImage(set,square.type,square.color,blendColor: (square.color) == Color.WHITE ? chessBoard.whitePieceColor : chessBoard.blackPieceColor);
     double? pieceSize = size == null ? null : size!/8;
     //if (pieceSize != null) print("Dragging"); //double? pieceSize = size == null ? null : size/8;
-
     return Container( //color: Random().nextBool() ? Colors.green : Colors.red,
-      width: pieceSize,
-      height: pieceSize,
-      child: Center(
-        child: imageToDisplay,
-        ),
+        width: pieceSize,
+        height: pieceSize,
+        child: Center(
+          child: imageToDisplay,
+          ),
     );
   }
 }
