@@ -13,6 +13,8 @@ class ChessBoard extends StatefulWidget {
   /// manipulating the board programmatically.
   final ChessBoardController controller;
 
+  final ui.Color? lightSquare, darkSquare;
+
   /// Size of chessboard
   final double size;
 
@@ -60,6 +62,8 @@ class ChessBoard extends StatefulWidget {
     this.gridColor = Colors.grey,
     this.hidePieces = false,
     this.onSquareSelect,
+    this.lightSquare,
+    this.darkSquare,
   }) : super(key: key);
 
   static Image getPieceImage(String style, PieceType? type, Color color, {blendColor = Colors.white}) {
@@ -107,7 +111,11 @@ class _ChessBoardState extends State<ChessBoard> {
           child: Stack(
             children: [
               AspectRatio(
-                child: widget.backgroundImage != null ? CustomPaint(painter: BoardPainter(widget.backgroundImage,widget.gridColor)) : _getBoardImage(widget.boardColor),
+                child: widget.backgroundImage != null
+                    ? CustomPaint(painter: BoardPainter(widget.backgroundImage, widget.gridColor))
+                    : (widget.lightSquare != null && widget.darkSquare != null)
+                    ? CustomPaint(painter: SquaresPainter(widget.lightSquare!, widget.darkSquare!))
+                    : _getBoardImage(widget.boardColor),
                 aspectRatio: 1.0,
               ),
               widget.hidePieces ? const SizedBox.shrink(): AspectRatio(
@@ -475,3 +483,27 @@ class BoardPainter extends CustomPainter {
     return false;
   }
 }
+
+class SquaresPainter extends CustomPainter {
+  final ui.Color light, dark;
+  const SquaresPainter(this.light, this.dark);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cell = size.width / 8;
+    final paint = Paint();
+    for (var r = 0; r < 8; r++) {
+      for (var c = 0; c < 8; c++) {
+        // Bottom-left is dark from either side (a1 and h8 are both dark),
+        // so no orientation parameter is needed.
+        paint.color = (r + c) % 2 == 1 ? dark : light;
+        canvas.drawRect(Rect.fromLTWH(c * cell, r * cell, cell, cell), paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(SquaresPainter old) =>
+      old.light != light || old.dark != dark;
+}
+

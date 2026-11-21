@@ -41,6 +41,7 @@ class _HomePageState extends State<HomePage> {
           Expanded(
             child: Center(
               child: ChessBoard(
+                size: 500,
                 controller: controller,
                 boardColor: BoardColor.orange,
                 arrows: [
